@@ -20,9 +20,24 @@ def removeContoursSmallerThan(contours, threshold_area):
             contoursFiltered.append(cnt)
     return contoursFiltered
 
-# Returns list of points from approxPolyDP
-def toTupleList(list):
+# Returns list of points from return value of approxPolyDP
+def toPointsList(list):
     points = []
     for point in list:
-        points.append((point[0][0],point[0][1]))
+        points.append([point[0][0],point[0][1]])
+    points[1], points[2], points[3] = points[3], points[1], points[2]
     return points
+
+def getContours(img):
+    imgGray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
+    imgGray = cv.GaussianBlur(imgGray,(9,9),5)
+    imgCanny = cv.Canny(img,50,100)
+    contours, hierarchy = cv.findContours(imgCanny,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_NONE)
+    return contours
+
+def findGreatestContour(contours):
+    greatestCnt = contours[0]
+    for cnt in contours:
+        if cv.contourArea(cnt) >= cv.contourArea(greatestCnt):
+            greatestCnt = cnt
+    return greatestCnt

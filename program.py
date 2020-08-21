@@ -4,29 +4,36 @@ from functions import *
 
 
 def Main():
-    width, height = 640,480
+
     scale_percent = 30
     path = "test/1.jpg"
     
     imgOriginal = cv.imread(path)
     img = downscale(imgOriginal,scale_percent)
     
-    imgGray = cv.cvtColor(img,cv.COLOR_BGR2GRAY)
-    imgGray = cv.GaussianBlur(imgGray,(7,7),5)
-    imgCanny = cv.Canny(img,50,100)
+    contours = getContours(img)
     
-    contours, hierarchy = cv.findContours(imgCanny,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
+    contoursFiltered = removeContoursSmallerThan(contours, 1000)
+    paperContour = findGreatestContour(contoursFiltered)
     
-    contoursFiltered = removeContoursSmallerThan(contours, 400)
-    
-    list_of_points = toTupleList(cv.approxPolyDP(contoursFiltered[0],0.03 * cv.arcLength(contoursFiltered[0],True),True))
+    cv.drawContours(img,paperContour,-1,(0,255,0),3)
 
-    #cv.drawContours(img, contoursFiltered, -1, (0,255,0), 3)
-    
-    
-    print(list_of_points)  
-    
-    #cv.imshow("Picture", img)
+    a4Scale = 3
+
+    width = 297 * a4Scale
+    height = 210 * a4Scale
+    pointsOriginal = np.float32(toPointsList(cv.approxPolyDP(paperContour,0.03 * cv.arcLength(contoursFiltered[0],True),True)))
+    pointsWarped = np.float32([[0,0],[width,0],[0,height],[width,height]])
+
+    matrix = cv.getPerspectiveTransform(pointsOriginal,pointsWarped)
+    imgWarped = cv.warpPerspective(img,matrix,(width,height))
+
+    contoursNew = getContours(imgWarped)
+    contoursFiltered = removeContoursSmallerThan(contoursNew, 900)
+    #cv.drawContours(imgWarped,contoursFiltered,-1,(0,255,0),3)
+
+    cv.imshow("Warped Picture", imgWarped)
+    cv.imshow("Picture", img)
     cv.waitKey(0)
     
     
